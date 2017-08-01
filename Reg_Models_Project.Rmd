@@ -1,0 +1,97 @@
+---
+title: "Regression Models Course Project"
+author: "Andrew Mendonca"
+date: "July 28, 2017"
+output: pdf_document
+---
+
+## Executive Summary
+Motor Trend is a magazine about the automobile industry. They are interested in 
+exploring the relationship between a set of variables and miles per gallon (MPG) (outcome).
+They want to know if an automatic or manual is transmission better for MPG and the MPG difference 
+between automatic and manual transmissions. In this report, we will evaluate the mtcars data 
+set and develop an analysis to answer these questions based on regression models and exploratory 
+data analyses.
+
+## Exploratory Data Analysis
+Load the following library and data set.
+
+```{r, echo = TRUE}
+library(ggplot2)
+data(mtcars)
+```
+
+View a sample of the data set.
+```{r, echo = TRUE}
+head(mtcars)
+```
+Convert variables into factors.
+```{r, echo = TRUE}
+mtcars$cyl <- factor(mtcars$cyl)
+mtcars$vs <- factor(mtcars$vs)
+mtcars$am <- factor(mtcars$am, labels = cbind("Automatic", "Manual"))
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+```
+We create exploratory plots to help us understand the data better. Appendix - Plot 1,
+illustrates the automatic transmissions having a low MPG than the manual transmissions.
+
+## Regression Analysis
+View the difference between automatic and manual transmissions.
+
+```{r, echo = TRUE}
+aggregate(mpg ~ am, data = mtcars, mean)
+```
+We create a hypothesis that automatic cars have a 7.25 MPG lower than manual cars. We then
+use a t-test.
+
+```{r, echo = TRUE}
+t.test(mtcars[mtcars$am == "Automatic",]$mpg, mtcars[mtcars$am == "Manual",]$mpg)
+```
+It is shown that the p-value is 0.001374, which is a significant difference. Let's quantify this.
+
+```{r, echo = TRUE}
+summary(lm(mpg ~ am, data = mtcars))
+```
+The average MPG for an automatic transmission is 17.1 MPG, while the manual transmission is
+7.2 MPG higher. The R-squared value is 0.36, which means this model only explains 36% of the
+variance, so we need a multivariable model.
+
+Appendix - Plot 2, shows how all the other variables correlate with `mpg`. We see that
+`cyl`, `disp`, `hp`, and `wt` have strongest correlations with mpg. We include these variables
+in the new model and compare them with the initial model.
+
+```{r, echo = TRUE}
+anova(lm(mpg~am, data = mtcars), lm(mpg~am + cyl + disp + hp + wt, data = mtcars))
+```
+The p-value is 8.637e-08, so this multivariable model is significantly better than the linear
+model. Appendix - Plot 3, checks the residuals for non-normality and shows that they are all
+normally distributed.
+
+```{r, echo = TRUE}
+summary(lm(mpg~am + cyl + disp + hp + wt, data = mtcars))
+```
+This model only explains 86.64% of the variance, so this means that `cyl`, `disp`, `hp`, and
+`wt` had an effect on the correlation between `mpg` and `am`. Hence, the difference between
+automatic transmissions and manual transmissions is 1.81 MPG.
+
+## Appendix
+Plot 1 - Boxplot of MPG based on transmission type
+
+```{r, echo = TRUE}
+boxplot(mpg ~ am, data = mtcars, col = (c("green", "orange")), xlab = "Transmission Types",
+        ylab = "Miles Per Gallon")
+```
+
+Plot 2 - Pairs plot for the rest of the data set
+
+```{r, echo = TRUE}
+pairs(mpg ~ ., data = mtcars)
+```
+
+Plot 3 - Checking each residual
+
+```{r, echo = TRUE}
+par(mfrow = cbind(2,2))
+plot(lm(mpg~am + cyl + disp + hp + wt, data = mtcars))
+```
